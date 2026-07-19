@@ -1,16 +1,20 @@
--- AUTO FARM для The Battle Bricks (ручной ввод уровней)
+-- ═══════════════════════════════════════════════════
+-- MACRO RECORDER + ГЕНЕРАТОР СКРИПТОВ
+-- Записывает действия и создаёт готовый Lua-скрипт
+-- ═══════════════════════════════════════════════════
 
 local player = game.Players.LocalPlayer
 local gui = player:WaitForChild("PlayerGui")
+local mouse = player:GetMouse()
 
--- ===== СОЗДАЁМ ОКНО =====
+-- ===== СОЗДАЁМ GUI =====
 local screenGui = Instance.new("ScreenGui")
 screenGui.Parent = gui
 
 local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 300, 0, 350)
+mainFrame.Size = UDim2.new(0, 350, 0, 500)
 mainFrame.Position = UDim2.new(0, 10, 0, 10)
-mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 40)
+mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 35)
 mainFrame.BackgroundTransparency = 0.1
 mainFrame.BorderSizePixel = 2
 mainFrame.BorderColor3 = Color3.fromRGB(0, 200, 255)
@@ -22,190 +26,228 @@ mainFrame.Parent = screenGui
 local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 35)
 title.BackgroundTransparency = 1
-title.Text = "AUTO FARM"
+title.Text = "🎬 РЕКОРДЕР + ГЕНЕРАТОР"
 title.TextColor3 = Color3.fromRGB(255, 200, 50)
 title.TextScaled = true
 title.Font = Enum.Font.GothamBold
 title.Parent = mainFrame
 
--- ===== ПОЛЕ ДЛЯ УРОВНЯ 1 =====
-local label1 = Instance.new("TextLabel")
-label1.Size = UDim2.new(0.9, 0, 0, 22)
-label1.Position = UDim2.new(0.05, 0, 0.12, 0)
-label1.BackgroundTransparency = 1
-label1.Text = "🔴 УРОВЕНЬ 1:"
-label1.TextColor3 = Color3.fromRGB(255, 100, 100)
-label1.TextScaled = true
-label1.Font = Enum.Font.GothamBold
-label1.Parent = mainFrame
+-- Кнопка записи
+local recordBtn = Instance.new("TextButton")
+recordBtn.Size = UDim2.new(0.9, 0, 0, 40)
+recordBtn.Position = UDim2.new(0.05, 0, 0.12, 0)
+recordBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+recordBtn.Text = "🔴 НАЧАТЬ ЗАПИСЬ"
+recordBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+recordBtn.TextScaled = true
+recordBtn.Font = Enum.Font.GothamBold
+recordBtn.Parent = mainFrame
 
-local input1 = Instance.new("TextBox")
-input1.Size = UDim2.new(0.9, 0, 0, 30)
-input1.Position = UDim2.new(0.05, 0, 0.19, 0)
-input1.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-input1.Text = ""
-input1.TextColor3 = Color3.fromRGB(255, 255, 255)
-input1.TextScaled = true
-input1.Font = Enum.Font.Gotham
-input1.PlaceholderText = "Например: Stage 1"
-input1.Parent = mainFrame
+-- Кнопка стоп/генерации
+local generateBtn = Instance.new("TextButton")
+generateBtn.Size = UDim2.new(0.9, 0, 0, 40)
+generateBtn.Position = UDim2.new(0.05, 0, 0.24, 0)
+generateBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 200)
+generateBtn.Text = "⏹️ ОСТАНОВИТЬ И СГЕНЕРИРОВАТЬ"
+generateBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+generateBtn.TextScaled = true
+generateBtn.Font = Enum.Font.GothamBold
+generateBtn.Parent = mainFrame
+generateBtn.Visible = false -- скрываем пока не начали запись
 
--- ===== ПОЛЕ ДЛЯ УРОВНЯ 2 =====
-local label2 = Instance.new("TextLabel")
-label2.Size = UDim2.new(0.9, 0, 0, 22)
-label2.Position = UDim2.new(0.05, 0, 0.31, 0)
-label2.BackgroundTransparency = 1
-label2.Text = "🔵 УРОВЕНЬ 2:"
-label2.TextColor3 = Color3.fromRGB(100, 100, 255)
-label2.TextScaled = true
-label2.Font = Enum.Font.GothamBold
-label2.Parent = mainFrame
+-- Поле для вывода кода
+local codeBox = Instance.new("ScrollingFrame")
+codeBox.Size = UDim2.new(0.9, 0, 0, 200)
+codeBox.Position = UDim2.new(0.05, 0, 0.36, 0)
+codeBox.BackgroundColor3 = Color3.fromRGB(10, 10, 20)
+codeBox.BorderSizePixel = 1
+codeBox.BorderColor3 = Color3.fromRGB(100, 100, 200)
+codeBox.CanvasSize = UDim2.new(0, 0, 0, 0)
+codeBox.ScrollBarThickness = 6
+codeBox.Parent = mainFrame
 
-local input2 = Instance.new("TextBox")
-input2.Size = UDim2.new(0.9, 0, 0, 30)
-input2.Position = UDim2.new(0.05, 0, 0.38, 0)
-input2.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-input2.Text = ""
-input2.TextColor3 = Color3.fromRGB(255, 255, 255)
-input2.TextScaled = true
-input2.Font = Enum.Font.Gotham
-input2.PlaceholderText = "Например: Stage 2"
-input2.Parent = mainFrame
+local codeLabel = Instance.new("TextLabel")
+codeLabel.Size = UDim2.new(1, 0, 0, 0) -- будет расширяться
+codeLabel.BackgroundTransparency = 1
+codeLabel.Text = ""
+codeLabel.TextColor3 = Color3.fromRGB(200, 255, 200)
+codeLabel.TextScaled = false
+codeLabel.Font = Enum.Font.Code
+codeLabel.TextSize = 14
+codeLabel.TextXAlignment = Enum.TextXAlignment.Left
+codeLabel.TextYAlignment = Enum.TextYAlignment.Top
+codeLabel.Parent = codeBox
 
--- ===== СЛОТ ДЛЯ СПАМА =====
-local labelSlot = Instance.new("TextLabel")
-labelSlot.Size = UDim2.new(0.9, 0, 0, 22)
-labelSlot.Position = UDim2.new(0.05, 0, 0.47, 0)
-labelSlot.BackgroundTransparency = 1
-labelSlot.Text = "⚔️ СЛОТ ДЛЯ СПАМА:"
-labelSlot.TextColor3 = Color3.fromRGB(200, 200, 200)
-labelSlot.TextScaled = true
-labelSlot.Font = Enum.Font.GothamBold
-labelSlot.Parent = mainFrame
+-- Кнопка копирования
+local copyBtn = Instance.new("TextButton")
+copyBtn.Size = UDim2.new(0.4, 0, 0, 30)
+copyBtn.Position = UDim2.new(0.05, 0, 0.78, 0)
+copyBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+copyBtn.Text = "📋 КОПИРОВАТЬ"
+copyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+copyBtn.TextScaled = true
+copyBtn.Font = Enum.Font.GothamBold
+copyBtn.Parent = mainFrame
 
-local inputSlot = Instance.new("TextBox")
-inputSlot.Size = UDim2.new(0.3, 0, 0, 30)
-inputSlot.Position = UDim2.new(0.05, 0, 0.54, 0)
-inputSlot.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
-inputSlot.Text = "1"
-inputSlot.TextColor3 = Color3.fromRGB(255, 255, 255)
-inputSlot.TextScaled = true
-inputSlot.Font = Enum.Font.Gotham
-inputSlot.PlaceholderText = "1-8"
-inputSlot.Parent = mainFrame
-
--- ===== КНОПКА СТАРТ =====
-local startBtn = Instance.new("TextButton")
-startBtn.Size = UDim2.new(0.9, 0, 0, 40)
-startBtn.Position = UDim2.new(0.05, 0, 0.65, 0)
-startBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 50)
-startBtn.Text = "🚀 СТАРТ ФАРМА"
-startBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-startBtn.TextScaled = true
-startBtn.Font = Enum.Font.GothamBold
-startBtn.Parent = mainFrame
+-- Кнопка сохранить (имитация)
+local saveBtn = Instance.new("TextButton")
+saveBtn.Size = UDim2.new(0.4, 0, 0, 30)
+saveBtn.Position = UDim2.new(0.55, 0, 0.78, 0)
+saveBtn.BackgroundColor3 = Color3.fromRGB(200, 150, 50)
+saveBtn.Text = "💾 ПОКАЗАТЬ КОД"
+saveBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+saveBtn.TextScaled = true
+saveBtn.Font = Enum.Font.GothamBold
+saveBtn.Parent = mainFrame
 
 -- Статус
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(0.9, 0, 0, 25)
-statusLabel.Position = UDim2.new(0.05, 0, 0.80, 0)
+statusLabel.Position = UDim2.new(0.05, 0, 0.88, 0)
 statusLabel.BackgroundTransparency = 1
-statusLabel.Text = "⏳ Введи названия уровней и нажми СТАРТ"
+statusLabel.Text = "⏳ Нажми 'Начать запись'"
 statusLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
 statusLabel.TextScaled = true
 statusLabel.Font = Enum.Font.Gotham
 statusLabel.Parent = mainFrame
 
 -- ===== ПЕРЕМЕННЫЕ =====
-local farming = false
+local isRecording = false
+local actions = {}
+local connections = {}
 
--- ===== ФУНКЦИИ =====
-local function clickButton(text)
-    for _, button in pairs(gui:GetDescendants()) do
-        if button:IsA("TextButton") and button.Visible and button.Text == text then
-            button:Click()
-            return true
-        end
-    end
-    return false
+-- ===== ФУНКЦИИ ЗАПИСИ =====
+local function recordAction(actionType, data)
+    table.insert(actions, {type = actionType, data = data})
+    statusLabel.Text = "📝 Записано действий: " .. #actions
 end
 
-local function spamUnit(slot)
-    for _, button in pairs(gui:GetDescendants()) do
-        if button:IsA("TextButton") and button.Visible and button:FindFirstChild("SlotNumber") then
-            if button.SlotNumber.Value == slot then
-                button:Click()
-                return true
+local function startRecording()
+    actions = {}
+    isRecording = true
+    recordBtn.Visible = false
+    generateBtn.Visible = true
+    statusLabel.Text = "🔴 ИДЁТ ЗАПИСЬ... кликай по кнопкам и полю"
+    codeLabel.Text = ""
+    codeBox.CanvasSize = UDim2.new(0, 0, 0, 0)
+    
+    -- Запись кликов по кнопкам (через DescendantAdded)
+    local conn1 = gui.DescendantAdded:Connect(function(desc)
+        if isRecording and desc:IsA("TextButton") then
+            desc.MouseButton1Click:Connect(function()
+                if isRecording then
+                    recordAction("clickButton", {text = desc.Text})
+                end
+            end)
+        end
+    end)
+    table.insert(connections, conn1)
+    
+    -- Запись кликов по игровому полю (через Mouse)
+    local conn2 = mouse.Button1Down:Connect(function()
+        if isRecording then
+            local hit = mouse.Hit
+            if hit then
+                local pos = hit.Position
+                -- Проверяем, что клик не по GUI (если объект не часть интерфейса)
+                local target = mouse.Target
+                if target and not target:IsDescendantOf(gui) and not target:IsDescendantOf(screenGui) then
+                    recordAction("placeUnit", {x = pos.X, y = pos.Y, z = pos.Z})
+                end
             end
         end
-    end
-    return false
+    end)
+    table.insert(connections, conn2)
 end
 
--- ===== ОСНОВНАЯ ЛОГИКА =====
-startBtn.MouseButton1Click:Connect(function()
-    local level1 = input1.Text
-    local level2 = input2.Text
-    local slot = tonumber(inputSlot.Text) or 1
+local function stopAndGenerate()
+    isRecording = false
+    for _, conn in pairs(connections) do
+        conn:Disconnect()
+    end
+    connections = {}
+    recordBtn.Visible = true
+    generateBtn.Visible = false
+    statusLabel.Text = "⏹️ Запись остановлена. Генерация кода..."
     
-    if level1 == "" or level2 == "" then
-        statusLabel.Text = "⚠️ Введи названия обоих уровней!"
-        return
+    -- Генерируем скрипт
+    local scriptLines = {}
+    table.insert(scriptLines, "-- Автоматически сгенерированный скрипт")
+    table.insert(scriptLines, "-- Количество действий: " .. #actions)
+    table.insert(scriptLines, "")
+    table.insert(scriptLines, "local player = game.Players.LocalPlayer")
+    table.insert(scriptLines, "local gui = player:WaitForChild('PlayerGui')")
+    table.insert(scriptLines, "")
+    table.insert(scriptLines, "local function clickButton(text)")
+    table.insert(scriptLines, "    for _, button in pairs(gui:GetDescendants()) do")
+    table.insert(scriptLines, "        if button:IsA('TextButton') and button.Visible and button.Text == text then")
+    table.insert(scriptLines, "            button:Click()")
+    table.insert(scriptLines, "            return true")
+    table.insert(scriptLines, "        end")
+    table.insert(scriptLines, "    end")
+    table.insert(scriptLines, "    return false")
+    table.insert(scriptLines, "end")
+    table.insert(scriptLines, "")
+    table.insert(scriptLines, "local function placeUnit(x, y, z)")
+    table.insert(scriptLines, "    local mouse = player:GetMouse()")
+    table.insert(scriptLines, "    -- Эмуляция клика по координатам (зависит от игры)")
+    table.insert(scriptLines, "    -- В Roblox нельзя программно кликнуть по миру, поэтому эта функция")
+    table.insert(scriptLines, "    -- может быть реализована через симуляцию нажатия или через удалённые события.")
+    table.insert(scriptLines, "    -- В данном случае мы просто выводим координаты для ручной вставки.")
+    table.insert(scriptLines, "    print('Разместить юнита по координатам:', x, y, z)")
+    table.insert(scriptLines, "    -- Здесь можно добавить вызов игровой функции, если известна.")
+    table.insert(scriptLines, "end")
+    table.insert(scriptLines, "")
+    table.insert(scriptLines, "-- Основной блок действий")
+    table.insert(scriptLines, "print('Запуск автоматизации...')")
+    
+    for i, action in ipairs(actions) do
+        if action.type == "clickButton" then
+            table.insert(scriptLines, string.format('clickButton("%s")', action.data.text:gsub('"', '\\"')))
+        elseif action.type == "placeUnit" then
+            local x, y, z = action.data.x, action.data.y, action.data.z
+            table.insert(scriptLines, string.format('placeUnit(%.2f, %.2f, %.2f)', x, y, z))
+        end
+        table.insert(scriptLines, "wait(0.1)") -- небольшая задержка
     end
     
-    farming = not farming
+    table.insert(scriptLines, "")
+    table.insert(scriptLines, "print('Автоматизация завершена')")
     
-    if farming then
-        startBtn.Text = "⏹️ СТОП"
-        startBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
-        statusLabel.Text = "🟢 Фарм активен: " .. level1 .. " ↔ " .. level2
-        
-        spawn(function()
-            while farming do
-                -- Уровень 1
-                statusLabel.Text = "🔄 Заходим на " .. level1
-                if clickButton(level1) then
-                    wait(2)
-                    for i = 1, 30 do
-                        spamUnit(slot)
-                        wait(0.3)
-                    end
-                    wait(25)
-                    clickButton("Повторить")
-                    wait(2)
-                else
-                    statusLabel.Text = "❌ Не найден уровень: " .. level1
-                    farming = false
-                    startBtn.Text = "🚀 СТАРТ ФАРМА"
-                    startBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 50)
-                    break
-                end
-                
-                -- Уровень 2
-                statusLabel.Text = "🔄 Заходим на " .. level2
-                if clickButton(level2) then
-                    wait(2)
-                    for i = 1, 30 do
-                        spamUnit(slot)
-                        wait(0.3)
-                    end
-                    wait(25)
-                    clickButton("Повторить")
-                    wait(2)
-                else
-                    statusLabel.Text = "❌ Не найден уровень: " .. level2
-                    farming = false
-                    startBtn.Text = "🚀 СТАРТ ФАРМА"
-                    startBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 50)
-                    break
-                end
-            end
-        end)
+    local fullScript = table.concat(scriptLines, "\n")
+    codeLabel.Text = fullScript
+    -- Обновляем размер Canvas
+    local lineCount = #scriptLines
+    codeBox.CanvasSize = UDim2.new(0, 0, 0, lineCount * 20 + 20)
+    statusLabel.Text = "✅ Код сгенерирован! Можно копировать."
+end
+
+-- ===== ОБРАБОТЧИКИ КНОПОК =====
+recordBtn.MouseButton1Click:Connect(startRecording)
+
+generateBtn.MouseButton1Click:Connect(stopAndGenerate)
+
+copyBtn.MouseButton1Click:Connect(function()
+    if codeLabel.Text ~= "" then
+        setclipboard(codeLabel.Text)
+        statusLabel.Text = "📋 Скопировано в буфер обмена!"
     else
-        startBtn.Text = "🚀 СТАРТ ФАРМА"
-        startBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 50)
-        statusLabel.Text = "⏸️ Фарм остановлен"
+        statusLabel.Text = "⚠️ Нет кода для копирования!"
     end
 end)
 
-print("✅ Скрипт загружен! Просто введи названия уровней и нажми СТАРТ")
+saveBtn.MouseButton1Click:Connect(function()
+    if codeLabel.Text ~= "" then
+        -- Показываем код в отдельном окне или просто фокусируем поле
+        codeBox.ScrollBarThickness = 6
+        statusLabel.Text = "📄 Код показан в окне выше"
+    else
+        statusLabel.Text = "⚠️ Сначала сгенерируй код!"
+    end
+end)
+
+print("✅ Рекордер с генерацией загружен!")
+print("1. Нажми 'Начать запись'")
+print("2. Кликай по кнопкам и полю (размещай юнитов)")
+print("3. Нажми 'Остановить и сгенерировать'")
+print("4. Скопируй готовый скрипт!")
